@@ -42,6 +42,7 @@
 		"@auth/drizzle-adapter": "^0.3.14",
 		"@auth/sveltekit": "^0.5.2",
 		"@libsql/client": "0.4.0-pre.7",
-		"drizzle-orm": "^0.29.3"
+		"drizzle-orm": "^0.29.3",
+		"nodemailer": "^6.9.8"
 	}
 }

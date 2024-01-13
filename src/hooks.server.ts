@@ -1,7 +1,18 @@
 import { SvelteKitAuth } from '@auth/sveltekit';
 import Google from '@auth/core/providers/google';
 import Twitter from '@auth/core/providers/twitter';
-import { GOOGLE_ID, GOOGLE_SECRET, TWIT_ID, TWIT_SECRET } from '$env/static/private';
+import EmailProvider from '@auth/core/providers/email';
+import {
+	GOOGLE_ID,
+	GOOGLE_SECRET,
+	TWIT_ID,
+	TWIT_SECRET,
+	SMTP_HOST,
+	SMTP_PORT,
+	SMTP_USER,
+	SMTP_PASSWORD,
+	EMAIL_FROM
+} from '$env/static/private';
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
 // import { db } from './lib/server/drizzle/schema.js';
 import { tursoClient } from '$lib/server/drizzle/conn.js';
@@ -32,15 +43,15 @@ const tableHijack: PgTableFn = (name, columns, extraConfig) => {
 function getAdapter(): Adapter {
 	return {
 		...DrizzleAdapter(db, tableHijack),
-		async getUserByAccount(providerAccountId) {
+		async getUserByAccount(providerAcc) {
 			const results = await db
 				.select()
 				.from(accounts)
 				.leftJoin(users, eq(users.id, accounts.userId))
 				.where(
 					and(
-						eq(accounts.provider, providerAccountId.provider),
-						eq(accounts.providerAccountId, providerAccountId.providerAccountId)
+						eq(accounts.provider, providerAcc.provider),
+						eq(accounts.providerAccountId, providerAcc.providerAccountId)
 					)
 				)
 				.get();
@@ -51,11 +62,22 @@ function getAdapter(): Adapter {
 }
 
 export const handle = SvelteKitAuth({
-	debug: dev === true,
+	debug: false, // dev === true,
 	adapter: getAdapter(),
 	providers: [
 		Google({ clientId: GOOGLE_ID, clientSecret: GOOGLE_SECRET }),
-		Twitter({ clientId: TWIT_ID, clientSecret: TWIT_SECRET })
+		Twitter({ clientId: TWIT_ID, clientSecret: TWIT_SECRET }),
+		EmailProvider({
+			server: {
+				host: SMTP_HOST,
+				port: Number(SMTP_PORT),
+				auth: {
+					user: SMTP_USER,
+					pass: SMTP_PASSWORD
+				}
+			},
+			from: EMAIL_FROM
+		})
 	],
 	callbacks: {
 		async session({ session, user, token }) {
@@ -64,5 +86,9 @@ export const handle = SvelteKitAuth({
 			session.user.usrRole = user.usrRole;
 			return session;
 		}
+	},
+	pages: {
+		signIn: '/login',
+		signOut: '/login'
 	}
 });

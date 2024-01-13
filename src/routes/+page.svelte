@@ -30,6 +30,7 @@
 <h2>Authenticated Pages</h2>
 <div><a href="/admin">admin</a></div>
 <div><a href="/profile">profile</a></div>
+<div><a href="/login">login with email</a></div>
 
 <style>
 	div {
